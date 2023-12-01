@@ -211,6 +211,20 @@ namespace glz
          }
       };
 
+    template<typename V, typename T, size_t I = 0>
+    constexpr size_t variant_index()
+    {
+        if constexpr (I >= std::variant_size_v<V>) {
+            return (std::variant_size_v<V>);
+        } else {
+            if constexpr (std::is_same_v<std::variant_alternative_t<I, V>, T>) {
+                return (I);
+            } else {
+                return (variant_index<V, T, I + 1>());
+            }
+        }
+    }
+
       template <is_variant T>
       struct to_binary<T> final
       {
@@ -220,10 +234,7 @@ namespace glz
             std::visit(
                [&](auto&& v) {
                   using V = std::decay_t<decltype(v)>;
-                  static constexpr auto index = []() {
-                     T var = V{};
-                     return var.index();
-                  }();
+                  static constexpr std::size_t index = variant_index<std::decay_t<decltype(value)>, V>();
 
                   constexpr uint8_t tag = tag::extensions | 0b00001'000;
 
